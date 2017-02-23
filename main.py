@@ -72,12 +72,21 @@ class NewPost(Handler):
             a = Blogs(title=title, blog=blog)
             a.put()
 
-            self.redirect("/blog")
+            self.redirect("/blog/" + str(a.key().id()))
+
         else:
             error = "we need both a title and text for the blog"
             self.render_front_new(title, blog, error)
 
+class ViewPostHandler(webapp2.RequestHandler):
+    def get(self, id):
+        if Blogs.get_by_id(int(id)):
+            self.response.write("That works!")
+        else:
+            self.response.write("That id doesn't exist!")
+
 app = webapp2.WSGIApplication([
     ('/blog', MainPage),
-    ('/newpost', NewPost)
+    ('/newpost', NewPost),
+    webapp2.Route('/blog/<id:\d+>', ViewPostHandler),
 ], debug=True)
