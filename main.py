@@ -17,6 +17,7 @@
 import os
 import webapp2
 import jinja2
+import cgi
 
 from google.appengine.ext import db
 
@@ -42,14 +43,13 @@ class Blogs(db.Model):
     blog = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
 
-
 class MainPage(Handler):
     #passing variable titles in to the template so you can use the variables throughout the template.
-    def render_front_main(self, title="", blog=""):
+    def render_front_main(self):
         blogs = db.GqlQuery("SELECT * FROM Blogs "
                             "ORDER BY created DESC "
                             "LIMIT 5 ")
-        self.render('main-blog.html', title=title, blog=blog, blogs=blogs)
+        self.render('main-blog.html', blogs=blogs)
 
     def get(self):
         self.render_front_main()
@@ -78,12 +78,17 @@ class NewPost(Handler):
             error = "we need both a title and text for the blog"
             self.render_front_new(title, blog, error)
 
-class ViewPostHandler(webapp2.RequestHandler):
+class ViewPostHandler(Handler):
+
     def get(self, id):
-        if Blogs.get_by_id(int(id)):
-            self.response.write("That works!")
-        else:
-            self.response.write("That id doesn't exist!")
+        key = Blogs.get_by_id(int(id))
+        if not key:
+            self.response.write("That blog doesn't exist!")
+            return
+        self.render_blog(key)
+
+    def render_blog(self, key):
+        self.render('blog-page.html', key=key)
 
 app = webapp2.WSGIApplication([
     ('/blog', MainPage),
